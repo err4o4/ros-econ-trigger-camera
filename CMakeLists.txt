@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(trigger_cam)
 
-add_compile_options(-std=c++14 -O2 -Wall -Wextra)
+add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   cv_bridge
-  image_transport
 )
 
 find_package(OpenCV REQUIRED)
@@ -19,10 +18,13 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-add_executable(trigger_cam_node src/trigger_cam_node.cpp)
-target_link_libraries(trigger_cam_node
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
+add_executable(${PROJECT_NAME}_node src/trigger_cam_node.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} ${OpenCV_LIBS})
+
+install(TARGETS ${PROJECT_NAME}_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-install(TARGETS trigger_cam_node
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)

@@ -1,19 +1,29 @@
 <launch>
-  <node pkg="trigger_cam" type="trigger_cam_node" name="trigger_cam" output="screen">
-    <param name="device" value="/dev/video0"/>
-    <param name="topic" value="image_raw"/>
-    <param name="frame_id" value="usb_cam"/>
+  <arg name="device" default="/dev/video0" />
+  <arg name="width" default="1920" />
+  <arg name="height" default="1080" />
+  <arg name="fps" default="30" />
+  <arg name="format" default="MJPG" />
+  <arg name="trigger_mode" default="true" />
+  <arg name="auto_lock" default="true" />
+  <arg name="exposure" default="33333" />
+  <arg name="publish_raw" default="true" />
+  <arg name="publish_compressed" default="true" />
+  <arg name="jpeg_quality" default="20" />
 
-    <!-- Pick a mode your camera supports; for your device: 1280x720@15 or 1920x1080@8 in UYVY -->
-    <param name="image_width" value="1920"/>
-    <param name="image_height" value="1080"/>
-    <param name="framerate" value="30"/>
-
-    <!-- UYVY is safest in trigger mode -->
-    <param name="pixel_format" value="MJPG"/>   <!-- or MJPG if you proved it's valid under trigger -->
-
-    <!-- GStreamer path is more robust for UYVY -->
-    <param name="use_gstreamer" value="false"/>
-    <param name="buffer_size" value="1"/>
+  <node name="trigger_cam" pkg="trigger_cam" type="trigger_cam_node" output="screen">
+    <param name="device" value="$(arg device)" />
+    <param name="width" value="$(arg width)" />
+    <param name="height" value="$(arg height)" />
+    <param name="fps" value="$(arg fps)" />
+    <param name="format" value="$(arg format)" />
+    <param name="trigger_mode" value="$(arg trigger_mode)" />
+    <param name="auto_lock" value="$(arg auto_lock)" />
+    <param name="exposure" value="$(arg exposure)" />
+    <param name="publish_raw" value="$(arg publish_raw)" />
+    <param name="publish_compressed" value="$(arg publish_compressed)" />
+    <param name="jpeg_quality" value="$(arg jpeg_quality)" />
+    <param name="topic" value="image_raw" />
+    <param name="frame_id" value="camera" />
   </node>
 </launch>
