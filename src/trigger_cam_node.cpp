@@ -15,6 +15,7 @@
 #define CAMERA_CONTROL_24CUG 0xA8
 #define SET_STREAM_MODE_24CUG 0x1C
 #define SET_EXPOSURE_24CUG 0x12
+#define SET_TO_DEFAULT_24CUG 0xFF
 #define MODE_MASTER 0x00
 #define MODE_TRIGGER 0x01
 #define SET_SUCCESS 0x01
@@ -53,12 +54,10 @@ static bool sendOSCode(int hid_fd) {
     unsigned char out_buf[BUFFER_LENGTH] = {0};
     unsigned char in_buf[BUFFER_LENGTH] = {0};
 
-    out_buf[1] = OS_CODE;    // Report Number for OS identification
-    out_buf[2] = LINUX_OS;   // Linux OS identifier
+    out_buf[1] = OS_CODE;
+    out_buf[2] = LINUX_OS;
 
-    if (write(hid_fd, out_buf, BUFFER_LENGTH) < 0) {
-        return false;
-    }
+    if (write(hid_fd, out_buf, BUFFER_LENGTH) < 0) return false;
 
     fd_set rfds;
     struct timeval tv;
@@ -73,6 +72,30 @@ static bool sendOSCode(int hid_fd) {
     return (in_buf[0] == OS_CODE &&
             in_buf[1] == LINUX_OS &&
             in_buf[2] == SET_SUCCESS);
+}
+
+static bool resetToDefault(int hid_fd) {
+    unsigned char out_buf[BUFFER_LENGTH] = {0};
+    unsigned char in_buf[BUFFER_LENGTH] = {0};
+
+    out_buf[1] = CAMERA_CONTROL_24CUG;
+    out_buf[2] = SET_TO_DEFAULT_24CUG;
+
+    if (write(hid_fd, out_buf, BUFFER_LENGTH) < 0) return false;
+
+    fd_set rfds;
+    struct timeval tv;
+    FD_ZERO(&rfds);
+    FD_SET(hid_fd, &rfds);
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+
+    if (select(hid_fd + 1, &rfds, NULL, NULL, &tv) <= 0) return false;
+    if (read(hid_fd, in_buf, BUFFER_LENGTH) < 0) return false;
+
+    return (in_buf[0] == CAMERA_CONTROL_24CUG &&
+            in_buf[1] == SET_TO_DEFAULT_24CUG &&
+            in_buf[6] == SET_SUCCESS);
 }
 
 static bool setExposure(int hid_fd, unsigned int exposure_us) {
@@ -165,6 +188,14 @@ int main(int argc, char** argv) {
         }
         ROS_INFO("Camera OS identification successful");
 
+        // Reset camera to factory defaults
+        if (!resetToDefault(hid_fd)) {
+            ROS_ERROR("Failed to reset camera to defaults");
+            close(hid_fd);
+            return 1;
+        }
+        ROS_INFO("Camera reset to factory defaults");
+
         // Set camera mode
         if (setTriggerMode(hid_fd, trigger_mode, auto_lock)) {
             ROS_INFO("Camera mode: %s", trigger_mode ? "TRIGGER" : "MASTER");
@@ -218,7 +249,11 @@ int main(int argc, char** argv) {
 
     cv::Mat frame;
     while (ros::ok()) {
-      
+        if (trigger_mode) {
+            cap.grab();
+            usleep(50000);
+        }
+
         if (!cap.read(frame) || frame.empty()) {
             ros::spinOnce();
             continue;
