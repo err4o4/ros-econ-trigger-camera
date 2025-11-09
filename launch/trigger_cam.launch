@@ -5,7 +5,7 @@
   <arg name="fps" default="30" />
   <arg name="format" default="MJPG" />
   <arg name="trigger_mode" default="true" />
-  <arg name="auto_lock" default="true" />
+  <arg name="auto_lock" default="false" />
   <arg name="exposure" default="33333" />
   <arg name="publish_raw" default="true" />
   <arg name="publish_compressed" default="true" />
