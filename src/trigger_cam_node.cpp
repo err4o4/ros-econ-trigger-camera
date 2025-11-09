@@ -249,11 +249,6 @@ int main(int argc, char** argv) {
 
     cv::Mat frame;
     while (ros::ok()) {
-        if (trigger_mode) {
-            cap.grab();
-            usleep(50000);
-        }
-
         if (!cap.read(frame) || frame.empty()) {
             ros::spinOnce();
             continue;
