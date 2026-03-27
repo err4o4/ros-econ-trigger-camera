@@ -126,6 +126,20 @@ static bool setFlip(int hid_fd, unsigned char flip_value) {
             in_buf[6] == SET_SUCCESS);
 }
 
+static bool resetToDefault(int hid_fd) {
+    unsigned char out_buf[BUFFER_LENGTH] = {0};
+    unsigned char in_buf[BUFFER_LENGTH] = {0};
+
+    out_buf[1] = CAMERA_CONTROL_24CUG;
+    out_buf[2] = 0xFF; // SET_TO_DEFAULT
+
+    if (!hidCmd(hid_fd, out_buf, in_buf)) return false;
+
+    return (in_buf[0] == CAMERA_CONTROL_24CUG &&
+            in_buf[1] == 0xFF &&
+            in_buf[6] == SET_SUCCESS);
+}
+
 static bool setExposure(int hid_fd, unsigned int exposure_us) {
     if (exposure_us < EXPOSURE_MIN || exposure_us > EXPOSURE_MAX) return false;
 
@@ -210,6 +224,13 @@ int main(int argc, char** argv) {
     }
     ROS_INFO("Camera OS identification successful");
     usleep(100000);
+
+    if (resetToDefault(hid_fd)) {
+        ROS_INFO("Camera reset to factory defaults");
+    } else {
+        ROS_WARN("Failed to reset camera to defaults");
+    }
+    usleep(2000000); // 2 s — camera needs time to fully reinitialize after reset
 
     if (setExposure(hid_fd, exposure_us)) {
         ROS_INFO("Exposure set to %u us", exposure_us);
